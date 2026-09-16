@@ -118,14 +118,14 @@ export function PortfolioDeck(props) {
             const cardLeft = rect.width / 2 - cardWidth / 2 + proj.xOffset
             const cardRight = cardLeft + cardWidth
             // The currently-hovered card's test region is extended up to
-            // cover its popped-up position too (a fixed 60px above its
-            // un-shifted resting top, same for every card — see the inner
-            // motion.div's hover variant), so moving the cursor up into the
-            // raised card doesn't read as leaving it. Every other card still
-            // only tests its plain resting footprint.
+            // cover its popped-up position too — every card pops to the same
+            // absolute height, 60px above the un-shifted layout top (see the
+            // inner motion.div's hover variant) — so moving the cursor up
+            // into the raised card doesn't read as leaving it. Every other
+            // card still only tests its plain resting footprint.
             const cardTop =
                 index === hoveredIndex
-                    ? rect.height - (40 + cardHeight - 60)
+                    ? rect.height - (40 + cardHeight + 60)
                     : rect.height - (40 - proj.yOffset + cardHeight)
             const cardBottom = rect.height - (40 - proj.yOffset)
             if (
@@ -330,13 +330,13 @@ function PortfolioCard({ proj, index, isHovered, ...props }) {
                     },
                     hover: {
                         rotate: 0,
-                        // Outer's constant y:proj.yOffset already shifts the
-                        // rendered position; adding another -proj.yOffset here
-                        // would double count it and make edge cards (larger
-                        // yOffset) pop higher than centre cards. This lands
-                        // every card at the same absolute height: 60px above
-                        // its un-shifted resting top.
-                        y: proj.yOffset - 60,
+                        // Outer's constant y:proj.yOffset shifts the rendered
+                        // position down by yOffset (gap-from-bottom = layout
+                        // - transform_y). Subtracting yOffset again here
+                        // cancels that shift out, so every card lands at the
+                        // same absolute height regardless of its own
+                        // yOffset: gap-from-bottom = 40 + cardHeight + 60.
+                        y: -60 - proj.yOffset,
                         scale: 1.02,
                         boxShadow:
                             "0px 20px 40px rgba(0, 0, 0, 0.12), 0px 8px 16px rgba(0, 0, 0, 0.06)",
