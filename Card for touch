@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { addPropertyControls, ControlType } from "framer"
+import { addPropertyControls, ControlType, Link } from "framer"
 
 export function PortfolioDeckMobile(props) {
     const {
@@ -229,19 +229,13 @@ function PortfolioCardMobile({ proj, ...props }) {
         borderTop: "1px solid rgba(255,255,255,0.15)",
     }
 
-    const handleCardTap = () => {
-        if (proj.link) {
-            window.open(proj.link, "_blank", "noopener,noreferrer")
-        }
-    }
-
     const handleInfoTap = (e: React.MouseEvent) => {
         e.stopPropagation()
         setShowCaption((v) => !v)
     }
 
-    return (
-        <div style={cardStyle} onClick={handleCardTap}>
+    const cardContent = (
+        <div style={cardStyle}>
             <div style={imageWrapperStyle}>
                 {proj.image ? (
                     <img
@@ -339,6 +333,16 @@ function PortfolioCardMobile({ proj, ...props }) {
                 </p>
             )}
         </div>
+    )
+
+    if (!proj.link) {
+        return cardContent
+    }
+
+    return (
+        <Link href={proj.link} style={{ display: "contents" }}>
+            {cardContent}
+        </Link>
     )
 }
 
@@ -546,8 +550,8 @@ addPropertyControls(PortfolioDeckMobile, {
         group: "Project 1",
     },
     project1Link: {
-        type: ControlType.String,
-        title: "URL Path",
+        type: ControlType.Link,
+        title: "Link",
         group: "Project 1",
     },
     project1Tags: {
@@ -573,8 +577,8 @@ addPropertyControls(PortfolioDeckMobile, {
         group: "Project 2",
     },
     project2Link: {
-        type: ControlType.String,
-        title: "URL Path",
+        type: ControlType.Link,
+        title: "Link",
         group: "Project 2",
     },
     project2Tags: {
@@ -600,8 +604,8 @@ addPropertyControls(PortfolioDeckMobile, {
         group: "Project 3",
     },
     project3Link: {
-        type: ControlType.String,
-        title: "URL Path",
+        type: ControlType.Link,
+        title: "Link",
         group: "Project 3",
     },
     project3Tags: {
@@ -627,8 +631,8 @@ addPropertyControls(PortfolioDeckMobile, {
         group: "Project 4",
     },
     project4Link: {
-        type: ControlType.String,
-        title: "URL Path",
+        type: ControlType.Link,
+        title: "Link",
         group: "Project 4",
     },
     project4Tags: {
