@@ -175,23 +175,40 @@ function PortfolioCard({ proj, index, ...props }) {
         window.location.href = proj.link
     }
 
-    const baseCardStyle = {
+    // Static hit-box: owns mouse events and never changes shape/position on
+    // hover, so it can't drift out from under the cursor and cause the
+    // hover state to flicker between overlapping cards near the arc centre.
+    // Only zIndex (paint order) is allowed to change here.
+    const hitboxStyle = {
         position: "absolute" as const,
         width: `${cardWidth}px`,
         height: `${cardHeight}px`,
+        bottom: "40px",
+        left: `calc(50% - ${cardWidth / 2}px + ${proj.xOffset}px)`,
+        cursor: "pointer",
+        overflow: "visible" as const,
+        y: proj.yOffset,
+    }
+
+    // Visual card: purely presentational, free to rotate/translate/scale on
+    // hover. It sits inside the static hit-box so pointer events keep
+    // targeting a descendant of the hit-box no matter where it visually
+    // ends up while animating.
+    const visualCardStyle = {
+        position: "absolute" as const,
+        inset: 0,
+        width: "100%",
+        height: "100%",
         backgroundColor: cardBg,
         border: "none",
         borderRadius: `${borderRadius}px`,
-        cursor: "pointer",
         padding: `${cardPadding}px`,
         display: "flex",
         flexDirection: "column" as const,
         gap: `${elementSpacing}px`,
-        bottom: "40px",
         overflow: "visible" as const,
         transformOrigin: "center bottom",
         boxSizing: "border-box" as const,
-        left: `calc(50% - ${cardWidth / 2}px + ${proj.xOffset}px)`,
     }
 
     const contentImageWrapperStyle = {
@@ -227,165 +244,174 @@ function PortfolioCard({ proj, index, ...props }) {
 
     return (
         <motion.div
-            style={baseCardStyle}
+            style={hitboxStyle}
             initial="default"
             animate={isHovered ? "hover" : "default"}
-            whileTap={{ scale: 0.99 }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
             variants={{
-                default: {
-                    rotate: proj.angle,
-                    y: proj.yOffset,
-                    zIndex: index + 1,
-                    boxShadow:
-                        "0px 4px 10px rgba(0, 0, 0, 0.05), 0px 15px 35px rgba(0, 0, 0, 0.07)",
-                },
-                hover: {
-                    y: -60,
-                    rotate: 0,
-                    scale: 1.02,
-                    zIndex: 100,
-                    boxShadow:
-                        "0px 20px 40px rgba(0, 0, 0, 0.12), 0px 8px 16px rgba(0, 0, 0, 0.06)",
-                    transition: { type: "spring", stiffness: 350, damping: 22 },
-                },
+                default: { zIndex: index + 1 },
+                hover: { zIndex: 100 },
             }}
         >
-            {/* Thumbnail */}
-            <div style={contentImageWrapperStyle}>
-                {proj.image ? (
-                    <motion.img
-                        src={proj.image}
-                        alt={proj.title}
+            <motion.div
+                style={visualCardStyle}
+                initial="default"
+                animate={isHovered ? "hover" : "default"}
+                whileTap={{ scale: 0.99 }}
+                variants={{
+                    default: {
+                        rotate: proj.angle,
+                        y: 0,
+                        scale: 1,
+                        boxShadow:
+                            "0px 4px 10px rgba(0, 0, 0, 0.05), 0px 15px 35px rgba(0, 0, 0, 0.07)",
+                    },
+                    hover: {
+                        rotate: 0,
+                        y: -60 - proj.yOffset,
+                        scale: 1.02,
+                        boxShadow:
+                            "0px 20px 40px rgba(0, 0, 0, 0.12), 0px 8px 16px rgba(0, 0, 0, 0.06)",
+                        transition: { type: "spring", stiffness: 350, damping: 22 },
+                    },
+                }}
+            >
+                {/* Thumbnail */}
+                <div style={contentImageWrapperStyle}>
+                    {proj.image ? (
+                        <motion.img
+                            src={proj.image}
+                            alt={proj.title}
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                x: isHovered ? imageX : 0,
+                                y: isHovered ? imageY : 0,
+                            }}
+                            variants={{
+                                default: {
+                                    scale: 1.0,
+                                    filter: "contrast(1) saturate(1)",
+                                },
+                                hover: {
+                                    scale: 1.12,
+                                    filter: "contrast(1.04) saturate(1.05)",
+                                },
+                            }}
+                            transition={{
+                                duration: 0.4,
+                                ease: "easeOut",
+                                delay: 0.12,
+                            }}
+                        />
+                    ) : (
+                        <motion.div
+                            style={{
+                                color: "rgba(0,0,0,0.15)",
+                                fontSize: "11px",
+                                fontFamily: "sans-serif",
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                x: isHovered ? imageX : 0,
+                                y: isHovered ? imageY : 0,
+                            }}
+                            variants={{
+                                default: { scale: 1 },
+                                hover: { scale: 1.08 },
+                            }}
+                            transition={{
+                                duration: 0.4,
+                                ease: "easeOut",
+                                delay: 0.12,
+                            }}
+                        >
+                            [ Place Mockup Image ]
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Title */}
+                <div>
+                    <h3
                         style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            x: isHovered ? imageX : 0,
-                            y: isHovered ? imageY : 0,
-                        }}
-                        variants={{
-                            default: {
-                                scale: 1.0,
-                                filter: "contrast(1) saturate(1)",
-                            },
-                            hover: {
-                                scale: 1.12,
-                                filter: "contrast(1.04) saturate(1.05)",
-                            },
-                        }}
-                        transition={{
-                            duration: 0.4,
-                            ease: "easeOut",
-                            delay: 0.12,
-                        }}
-                    />
-                ) : (
-                    <motion.div
-                        style={{
-                            color: "rgba(0,0,0,0.15)",
-                            fontSize: "11px",
-                            fontFamily: "sans-serif",
-                            width: "100%",
-                            height: "100%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            x: isHovered ? imageX : 0,
-                            y: isHovered ? imageY : 0,
-                        }}
-                        variants={{
-                            default: { scale: 1 },
-                            hover: { scale: 1.08 },
-                        }}
-                        transition={{
-                            duration: 0.4,
-                            ease: "easeOut",
-                            delay: 0.12,
+                            fontSize: `${titleFontSize}px`,
+                            fontWeight: titleFontWeight,
+                            color: titleColor,
+                            margin: 0,
+                            fontFamily: titleFontFamily,
+                            lineHeight: "1.3",
+                            wordBreak: "break-word",
                         }}
                     >
-                        [ Place Mockup Image ]
-                    </motion.div>
-                )}
-            </div>
+                        {proj.title}
+                    </h3>
+                </div>
 
-            {/* Title */}
-            <div>
-                <h3
-                    style={{
-                        fontSize: `${titleFontSize}px`,
-                        fontWeight: titleFontWeight,
-                        color: titleColor,
-                        margin: 0,
-                        fontFamily: titleFontFamily,
-                        lineHeight: "1.3",
-                        wordBreak: "break-word",
-                    }}
-                >
-                    {proj.title}
-                </h3>
-            </div>
-
-            {/* Tags */}
-            {proj.tags && (
-                <p
-                    style={{
-                        fontFamily: tagFontFamily,
-                        fontSize: `${tagFontSize}px`,
-                        fontWeight: tagFontWeight,
-                        color: tagColor,
-                        margin: 0,
-                        lineHeight: "1.2",
-                        wordBreak: "break-word",
-                        marginTop: "auto",
-                    }}
-                >
-                    {proj.tags}
-                </p>
-            )}
-
-            {/* Floating caption */}
-            {proj.caption && (
-                <motion.div
-                    style={horizontalCaptionStyle}
-                    variants={{
-                        default: {
-                            opacity: 0,
-                            x: -10,
-                            scale: 0.95,
-                            pointerEvents: "none",
-                        },
-                        hover: {
-                            opacity: textBoxOpacity,
-                            x: 0,
-                            scale: 1,
-                            pointerEvents: "auto",
-                            transition: { delay: 0.05 },
-                        },
-                    }}
-                >
+                {/* Tags */}
+                {proj.tags && (
                     <p
                         style={{
-                            fontSize: `${captionFontSize}px`,
-                            fontFamily: captionFontFamily,
-                            lineHeight: "1.5",
-                            fontWeight: captionFontWeight,
+                            fontFamily: tagFontFamily,
+                            fontSize: `${tagFontSize}px`,
+                            fontWeight: tagFontWeight,
+                            color: tagColor,
                             margin: 0,
-                            whiteSpace: "normal",
-                            color:
-                                captionTextColor === "transparent" ||
-                                !captionTextColor
-                                    ? titleColor
-                                    : captionTextColor,
+                            lineHeight: "1.2",
+                            wordBreak: "break-word",
+                            marginTop: "auto",
                         }}
                     >
-                        {proj.caption}
+                        {proj.tags}
                     </p>
-                </motion.div>
-            )}
+                )}
+
+                {/* Floating caption */}
+                {proj.caption && (
+                    <motion.div
+                        style={horizontalCaptionStyle}
+                        variants={{
+                            default: {
+                                opacity: 0,
+                                x: -10,
+                                scale: 0.95,
+                                pointerEvents: "none",
+                            },
+                            hover: {
+                                opacity: textBoxOpacity,
+                                x: 0,
+                                scale: 1,
+                                pointerEvents: "auto",
+                                transition: { delay: 0.05 },
+                            },
+                        }}
+                    >
+                        <p
+                            style={{
+                                fontSize: `${captionFontSize}px`,
+                                fontFamily: captionFontFamily,
+                                lineHeight: "1.5",
+                                fontWeight: captionFontWeight,
+                                margin: 0,
+                                whiteSpace: "normal",
+                                color:
+                                    captionTextColor === "transparent" ||
+                                    !captionTextColor
+                                        ? titleColor
+                                        : captionTextColor,
+                            }}
+                        >
+                            {proj.caption}
+                        </p>
+                    </motion.div>
+                )}
+            </motion.div>
         </motion.div>
     )
 }
