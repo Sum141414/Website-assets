@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { addPropertyControls, ControlType, Link } from "framer"
+import { addPropertyControls, ControlType } from "framer"
 
 export function PortfolioDeckMobile(props) {
     const {
@@ -340,9 +340,16 @@ function PortfolioCardMobile({ proj, ...props }) {
     }
 
     return (
-        <Link href={proj.link} style={{ display: "contents" }}>
+        <a
+            href={proj.link}
+            style={{
+                display: "contents",
+                textDecoration: "none",
+                color: "inherit",
+            }}
+        >
             {cardContent}
-        </Link>
+        </a>
     )
 }
 
