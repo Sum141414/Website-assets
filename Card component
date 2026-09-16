@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { motion, useMotionValue, useSpring } from "framer-motion"
 import { addPropertyControls, ControlType } from "framer"
 
@@ -91,15 +91,57 @@ export function PortfolioDeck(props) {
         },
     ]
 
-    // Hover ownership lives here, as a single value, instead of each card
-    // tracking its own isHovered flag. With independent per-card state, a
-    // fast sideways swipe across overlapping hit-boxes can leave two
-    // neighbouring cards both reporting isHovered=true for a render or two
-    // (their enter/leave events interleave, or React batches them together),
-    // so both jump to the front and flicker against each other. A single
-    // "which index is hovered" value makes that impossible — only one index
-    // can be current at a time, however the enter/leave events land.
+    // Hover ownership lives here, as a single value, and is decided purely
+    // from cursor position (see handleContainerMouseMove) instead of each
+    // card's own DOM mouseenter/mouseleave. When two cards' hit-boxes
+    // genuinely overlap on screen, a cursor sitting in that shared sliver
+    // can make the browser's hit-test alternate between the two elements
+    // from one native mousemove sample to the next — each toggle is a real,
+    // legitimate enter/leave pair, not a bug in state handling, so no amount
+    // of guarding individual cards' own events fixes it. Computing "which
+    // card is under the cursor" as a pure function of (x, y) on every move
+    // sidesteps that entirely: the same cursor position always resolves to
+    // the same single card, so there's nothing left to oscillate.
     const [hoveredIndex, setHoveredIndex] = useState(null)
+
+    const handleContainerMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect()
+        const pointerX = e.clientX - rect.left
+        const pointerY = e.clientY - rect.top
+
+        // Mirrors the geometry each card's own hit-box is drawn with
+        // (hitboxStyle below): a rect cardWidth wide, cardHeight tall,
+        // sitting proj.yOffset above the container's bottom edge.
+        let matchIndex = null
+        projects.forEach((proj, index) => {
+            if (!proj.title) return
+            const cardLeft = rect.width / 2 - cardWidth / 2 + proj.xOffset
+            const cardRight = cardLeft + cardWidth
+            // The currently-hovered card's test region is extended up to
+            // cover its popped-up position too (a fixed 60px above its
+            // un-shifted resting top, same for every card — see the inner
+            // motion.div's hover variant), so moving the cursor up into the
+            // raised card doesn't read as leaving it. Every other card still
+            // only tests its plain resting footprint.
+            const cardTop =
+                index === hoveredIndex
+                    ? rect.height - (40 + cardHeight - 60)
+                    : rect.height - (40 - proj.yOffset + cardHeight)
+            const cardBottom = rect.height - (40 - proj.yOffset)
+            if (
+                pointerX >= cardLeft &&
+                pointerX <= cardRight &&
+                pointerY >= cardTop &&
+                pointerY <= cardBottom
+            ) {
+                // Later entries sit on top by default (see PortfolioCard's
+                // zIndex variants), so within an overlap the later index wins.
+                matchIndex = index
+            }
+        })
+
+        setHoveredIndex(matchIndex)
+    }
 
     const handContainerStyle = {
         position: "relative" as const,
@@ -116,7 +158,11 @@ export function PortfolioDeck(props) {
     }
 
     return (
-        <div style={handContainerStyle}>
+        <div
+            style={handContainerStyle}
+            onMouseMove={handleContainerMouseMove}
+            onMouseLeave={() => setHoveredIndex(null)}
+        >
             {projects.map((proj, index) => {
                 if (!proj.title) return null
                 return (
@@ -125,12 +171,6 @@ export function PortfolioDeck(props) {
                         proj={proj}
                         index={index}
                         isHovered={hoveredIndex === index}
-                        onHoverStart={() => setHoveredIndex(index)}
-                        onHoverEnd={() =>
-                            setHoveredIndex((current) =>
-                                current === index ? null : current
-                            )
-                        }
                         {...props}
                     />
                 )
@@ -140,7 +180,7 @@ export function PortfolioDeck(props) {
 }
 
 // --- ISOLATED CARD COMPONENT ---
-function PortfolioCard({ proj, index, isHovered, onHoverStart, onHoverEnd, ...props }) {
+function PortfolioCard({ proj, index, isHovered, ...props }) {
     const {
         cardWidth,
         cardHeight,
@@ -171,18 +211,23 @@ function PortfolioCard({ proj, index, isHovered, onHoverStart, onHoverEnd, ...pr
     const imageX = useSpring(mouseX, springConfig)
     const imageY = useSpring(mouseY, springConfig)
 
+    // Hover on/off is decided by the container (see handleContainerMouseMove
+    // in PortfolioDeck), not by this card's own DOM events, so reset the
+    // parallax springs whenever isHovered turns off rather than relying on
+    // a mouseleave that this element may no longer be the target of.
+    useEffect(() => {
+        if (!isHovered) {
+            mouseX.set(0)
+            mouseY.set(0)
+        }
+    }, [isHovered])
+
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect()
         const relX = (e.clientX - rect.left) / rect.width - 0.5
         const relY = (e.clientY - rect.top) / rect.height - 0.5
         mouseX.set(relX * 18)
         mouseY.set(relY * 18)
-    }
-
-    const handleMouseLeave = () => {
-        onHoverEnd()
-        mouseX.set(0)
-        mouseY.set(0)
     }
 
     const handleClick = () => {
@@ -262,9 +307,7 @@ function PortfolioCard({ proj, index, isHovered, onHoverStart, onHoverEnd, ...pr
             style={hitboxStyle}
             initial="default"
             animate={isHovered ? "hover" : "default"}
-            onMouseEnter={onHoverStart}
             onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
             onClick={handleClick}
             variants={{
                 default: { zIndex: index + 1 },
@@ -287,7 +330,13 @@ function PortfolioCard({ proj, index, isHovered, onHoverStart, onHoverEnd, ...pr
                     },
                     hover: {
                         rotate: 0,
-                        y: -60 - proj.yOffset,
+                        // Outer's constant y:proj.yOffset already shifts the
+                        // rendered position; adding another -proj.yOffset here
+                        // would double count it and make edge cards (larger
+                        // yOffset) pop higher than centre cards. This lands
+                        // every card at the same absolute height: 60px above
+                        // its un-shifted resting top.
+                        y: proj.yOffset - 60,
                         scale: 1.02,
                         boxShadow:
                             "0px 20px 40px rgba(0, 0, 0, 0.12), 0px 8px 16px rgba(0, 0, 0, 0.06)",
