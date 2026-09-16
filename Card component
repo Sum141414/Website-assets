@@ -91,6 +91,16 @@ export function PortfolioDeck(props) {
         },
     ]
 
+    // Hover ownership lives here, as a single value, instead of each card
+    // tracking its own isHovered flag. With independent per-card state, a
+    // fast sideways swipe across overlapping hit-boxes can leave two
+    // neighbouring cards both reporting isHovered=true for a render or two
+    // (their enter/leave events interleave, or React batches them together),
+    // so both jump to the front and flicker against each other. A single
+    // "which index is hovered" value makes that impossible — only one index
+    // can be current at a time, however the enter/leave events land.
+    const [hoveredIndex, setHoveredIndex] = useState(null)
+
     const handContainerStyle = {
         position: "relative" as const,
         width: "100%",
@@ -114,6 +124,13 @@ export function PortfolioDeck(props) {
                         key={index}
                         proj={proj}
                         index={index}
+                        isHovered={hoveredIndex === index}
+                        onHoverStart={() => setHoveredIndex(index)}
+                        onHoverEnd={() =>
+                            setHoveredIndex((current) =>
+                                current === index ? null : current
+                            )
+                        }
                         {...props}
                     />
                 )
@@ -123,7 +140,7 @@ export function PortfolioDeck(props) {
 }
 
 // --- ISOLATED CARD COMPONENT ---
-function PortfolioCard({ proj, index, ...props }) {
+function PortfolioCard({ proj, index, isHovered, onHoverStart, onHoverEnd, ...props }) {
     const {
         cardWidth,
         cardHeight,
@@ -147,8 +164,6 @@ function PortfolioCard({ proj, index, ...props }) {
         textBoxOpacity,
     } = props
 
-    const [isHovered, setIsHovered] = useState(false)
-
     const mouseX = useMotionValue(0)
     const mouseY = useMotionValue(0)
 
@@ -165,7 +180,7 @@ function PortfolioCard({ proj, index, ...props }) {
     }
 
     const handleMouseLeave = () => {
-        setIsHovered(false)
+        onHoverEnd()
         mouseX.set(0)
         mouseY.set(0)
     }
@@ -247,7 +262,7 @@ function PortfolioCard({ proj, index, ...props }) {
             style={hitboxStyle}
             initial="default"
             animate={isHovered ? "hover" : "default"}
-            onMouseEnter={() => setIsHovered(true)}
+            onMouseEnter={onHoverStart}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
@@ -255,6 +270,7 @@ function PortfolioCard({ proj, index, ...props }) {
                 default: { zIndex: index + 1 },
                 hover: { zIndex: 100 },
             }}
+            transition={{ zIndex: { duration: 0 } }}
         >
             <motion.div
                 style={visualCardStyle}
