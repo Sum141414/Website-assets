@@ -11,6 +11,7 @@ export function PortfolioDeckMobile(props) {
         cardPadding,
         elementSpacing,
         cardGap,
+        containerSidePadding,
         titleFontFamily,
         titleFontSize,
         titleFontWeight,
@@ -94,7 +95,7 @@ export function PortfolioDeckMobile(props) {
         display: "flex",
         gap: `${cardGap}px`,
         width: "max-content", // must size to children, not stretch to 100%, or drag math breaks
-        padding: "20px 24px 30px 24px",
+        padding: `20px ${containerSidePadding}px 30px ${containerSidePadding}px`,
         boxSizing: "border-box" as const,
         touchAction: "none" as const, // let Framer Motion own the gesture instead of the browser
         cursor: "grab" as const,
@@ -349,6 +350,7 @@ PortfolioDeckMobile.defaultProps = {
     cardPadding: 16,
     elementSpacing: 12,
     cardGap: 16,
+    containerSidePadding: 24,
     titleFontFamily: "sans-serif",
     titleFontSize: 16,
     titleFontWeight: "500",
@@ -434,6 +436,13 @@ addPropertyControls(PortfolioDeckMobile, {
         title: "Gap Between Cards",
         min: 0,
         max: 60,
+        group: "Dimensions",
+    },
+    containerSidePadding: {
+        type: ControlType.Number,
+        title: "Side Padding",
+        min: 0,
+        max: 120,
         group: "Dimensions",
     },
 
