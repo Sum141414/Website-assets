@@ -157,11 +157,9 @@ function PortfolioCard({ proj, index, ...props }) {
     const imageY = useSpring(mouseY, springConfig)
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        // The hit-box extends well below the visible card (see hitboxStyle),
-        // so measure the tilt against the card's own size, not the hit-box's.
         const rect = e.currentTarget.getBoundingClientRect()
-        const relX = (e.clientX - rect.left) / cardWidth - 0.5
-        const relY = (e.clientY - rect.top) / cardHeight - 0.5
+        const relX = (e.clientX - rect.left) / rect.width - 0.5
+        const relY = (e.clientY - rect.top) / rect.height - 0.5
         mouseX.set(relX * 18)
         mouseY.set(relY * 18)
     }
@@ -181,38 +179,26 @@ function PortfolioCard({ proj, index, ...props }) {
     // hover, so it can't drift out from under the cursor and cause the
     // hover state to flicker between overlapping cards near the arc centre.
     // Only zIndex (paint order) is allowed to change here.
-    //
-    // Its bottom edge is pinned to the container's own base (0) for every
-    // card, regardless of proj.yOffset, instead of each card keeping its own
-    // yOffset-shifted resting footprint. Without this, cards with a smaller
-    // yOffset had a shorter hit-box than their neighbours, so moving the
-    // cursor straight down off a popped-up card could drop it past that
-    // card's hit-box and into a neighbour's taller one below — reading as a
-    // hover switch even though the cursor never moved sideways. Pinning
-    // every hit-box to the same base means a straight-down move stays
-    // inside the same card all the way to the bottom of the component; only
-    // a sideways move crosses into another card's column.
     const hitboxStyle = {
         position: "absolute" as const,
         width: `${cardWidth}px`,
-        height: `${cardHeight - proj.yOffset + 40}px`,
-        bottom: "0px",
+        height: `${cardHeight}px`,
+        bottom: "40px",
         left: `calc(50% - ${cardWidth / 2}px + ${proj.xOffset}px)`,
         cursor: "pointer",
         overflow: "visible" as const,
+        y: proj.yOffset,
     }
 
     // Visual card: purely presentational, free to rotate/translate/scale on
-    // hover. It sits at the top of the (taller) static hit-box, at exactly
-    // the card's own size, so pointer events over it keep targeting a
-    // descendant of the hit-box no matter where it visually ends up while
-    // animating.
+    // hover. It sits inside the static hit-box so pointer events keep
+    // targeting a descendant of the hit-box no matter where it visually
+    // ends up while animating.
     const visualCardStyle = {
         position: "absolute" as const,
-        top: 0,
-        left: 0,
+        inset: 0,
         width: "100%",
-        height: `${cardHeight}px`,
+        height: "100%",
         backgroundColor: cardBg,
         border: "none",
         borderRadius: `${borderRadius}px`,
@@ -285,7 +271,7 @@ function PortfolioCard({ proj, index, ...props }) {
                     },
                     hover: {
                         rotate: 0,
-                        y: proj.yOffset - 60,
+                        y: -60 - proj.yOffset,
                         scale: 1.02,
                         boxShadow:
                             "0px 20px 40px rgba(0, 0, 0, 0.12), 0px 8px 16px rgba(0, 0, 0, 0.06)",
