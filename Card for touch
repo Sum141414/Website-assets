@@ -1,0 +1,630 @@
+import React, { useRef, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { addPropertyControls, ControlType } from "framer"
+
+export function PortfolioDeckMobile(props) {
+    const {
+        cardWidth,
+        cardHeight,
+        cardBg,
+        borderRadius,
+        cardPadding,
+        elementSpacing,
+        cardGap,
+        titleFontFamily,
+        titleFontSize,
+        titleFontWeight,
+        titleColor,
+        tagFontFamily,
+        tagFontSize,
+        tagFontWeight,
+        tagColor,
+        captionFontFamily,
+        captionFontSize,
+        captionFontWeight,
+        captionTextColor,
+        textBoxBg,
+        textBoxOpacity,
+        project1Title,
+        project1Link,
+        project1Image,
+        project1Caption,
+        project1Tags,
+        project2Title,
+        project2Link,
+        project2Image,
+        project2Caption,
+        project2Tags,
+        project3Title,
+        project3Link,
+        project3Image,
+        project3Caption,
+        project3Tags,
+        project4Title,
+        project4Link,
+        project4Image,
+        project4Caption,
+        project4Tags,
+    } = props
+
+    const projects = [
+        {
+            title: project1Title,
+            link: project1Link,
+            image: project1Image,
+            caption: project1Caption,
+            tags: project1Tags,
+        },
+        {
+            title: project2Title,
+            link: project2Link,
+            image: project2Image,
+            caption: project2Caption,
+            tags: project2Tags,
+        },
+        {
+            title: project3Title,
+            link: project3Link,
+            image: project3Image,
+            caption: project3Caption,
+            tags: project3Tags,
+        },
+        {
+            title: project4Title,
+            link: project4Link,
+            image: project4Image,
+            caption: project4Caption,
+            tags: project4Tags,
+        },
+    ]
+
+    const containerRef = useRef(null)
+
+    // Outer "viewport": clips to the visible row, fixed size so Framer's Frame doesn't collapse it
+    const viewportStyle = {
+        position: "relative" as const,
+        width: "100%",
+        height: `${cardHeight + 90}px`,
+        overflow: "hidden" as const,
+        boxSizing: "border-box" as const,
+    }
+
+    // Inner "track": sized to its own content (not the viewport), and dragged horizontally
+    const trackStyle = {
+        display: "flex",
+        gap: `${cardGap}px`,
+        width: "max-content", // must size to children, not stretch to 100%, or drag math breaks
+        padding: "20px 24px 30px 24px",
+        boxSizing: "border-box" as const,
+        touchAction: "none" as const, // let Framer Motion own the gesture instead of the browser
+        cursor: "grab" as const,
+    }
+
+    return (
+        <div ref={containerRef} style={viewportStyle}>
+            <motion.div
+                style={trackStyle}
+                drag="x"
+                dragConstraints={containerRef}
+                dragElastic={0.08}
+                dragMomentum={true}
+                whileTap={{ cursor: "grabbing" }}
+            >
+                {projects.map((proj, index) => {
+                    if (!proj.title) return null
+                    return (
+                        <PortfolioCardMobile
+                            key={index}
+                            proj={proj}
+                            cardWidth={cardWidth}
+                            cardHeight={cardHeight}
+                            cardBg={cardBg}
+                            borderRadius={borderRadius}
+                            cardPadding={cardPadding}
+                            elementSpacing={elementSpacing}
+                            titleFontFamily={titleFontFamily}
+                            titleFontSize={titleFontSize}
+                            titleFontWeight={titleFontWeight}
+                            titleColor={titleColor}
+                            tagFontFamily={tagFontFamily}
+                            tagFontSize={tagFontSize}
+                            tagFontWeight={tagFontWeight}
+                            tagColor={tagColor}
+                            captionFontFamily={captionFontFamily}
+                            captionFontSize={captionFontSize}
+                            captionFontWeight={captionFontWeight}
+                            captionTextColor={captionTextColor}
+                            textBoxBg={textBoxBg}
+                            textBoxOpacity={textBoxOpacity}
+                        />
+                    )
+                })}
+            </motion.div>
+        </div>
+    )
+}
+
+function PortfolioCardMobile({ proj, ...props }) {
+    const {
+        cardWidth,
+        cardHeight,
+        cardBg,
+        borderRadius,
+        cardPadding,
+        elementSpacing,
+        titleFontFamily,
+        titleFontSize,
+        titleFontWeight,
+        titleColor,
+        tagFontFamily,
+        tagFontSize,
+        tagFontWeight,
+        tagColor,
+        captionFontFamily,
+        captionFontSize,
+        captionFontWeight,
+        captionTextColor,
+        textBoxBg,
+        textBoxOpacity,
+    } = props
+
+    const [showCaption, setShowCaption] = useState(false)
+
+    const cardStyle = {
+        position: "relative" as const,
+        flex: `0 0 ${cardWidth}px`,
+        width: `${cardWidth}px`,
+        height: `${cardHeight}px`,
+        backgroundColor: cardBg,
+        borderRadius: `${borderRadius}px`,
+        padding: `${cardPadding}px`,
+        display: "flex",
+        flexDirection: "column" as const,
+        gap: `${elementSpacing}px`,
+        boxSizing: "border-box" as const,
+        boxShadow:
+            "0px 4px 10px rgba(0, 0, 0, 0.05), 0px 15px 35px rgba(0, 0, 0, 0.07)",
+        cursor: "pointer",
+    }
+
+    const imageWrapperStyle = {
+        position: "relative" as const,
+        width: "100%",
+        flex: 1,
+        borderRadius: `${Math.max(0, borderRadius - 6)}px`,
+        overflow: "hidden" as const,
+        backgroundColor: "#EAEAEA",
+    }
+
+    const infoButtonStyle = {
+        position: "absolute" as const,
+        top: "10px",
+        right: "10px",
+        width: "28px",
+        height: "28px",
+        borderRadius: "50%",
+        backgroundColor: "rgba(255,255,255,0.85)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "13px",
+        fontFamily: "Georgia, serif",
+        fontStyle: "italic" as const,
+        color: "#111",
+        zIndex: 10,
+    }
+
+    const captionOverlayStyle = {
+        position: "absolute" as const,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        padding: "14px",
+        backgroundColor: textBoxBg,
+        opacity: textBoxOpacity,
+        backdropFilter: "blur(20px) saturate(120%)",
+        WebkitBackdropFilter: "blur(20px) saturate(120%)",
+        borderTop: "1px solid rgba(255,255,255,0.15)",
+    }
+
+    const handleCardTap = () => {
+        if (proj.link) {
+            window.open(proj.link, "_blank", "noopener,noreferrer")
+        }
+    }
+
+    const handleInfoTap = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        setShowCaption((v) => !v)
+    }
+
+    return (
+        <div style={cardStyle} onClick={handleCardTap}>
+            <div style={imageWrapperStyle}>
+                {proj.image ? (
+                    <img
+                        src={proj.image}
+                        alt={proj.title}
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                        }}
+                    />
+                ) : (
+                    <div
+                        style={{
+                            color: "rgba(0,0,0,0.15)",
+                            fontSize: "11px",
+                            fontFamily: "sans-serif",
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        [ Place Mockup Image ]
+                    </div>
+                )}
+
+                {proj.caption && (
+                    <div style={infoButtonStyle} onClick={handleInfoTap}>
+                        i
+                    </div>
+                )}
+
+                <AnimatePresence>
+                    {showCaption && proj.caption && (
+                        <motion.div
+                            style={captionOverlayStyle}
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 12 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <p
+                                style={{
+                                    fontSize: `${captionFontSize}px`,
+                                    fontFamily: captionFontFamily,
+                                    lineHeight: "1.5",
+                                    fontWeight: captionFontWeight,
+                                    margin: 0,
+                                    color:
+                                        captionTextColor === "transparent" ||
+                                        !captionTextColor
+                                            ? titleColor
+                                            : captionTextColor,
+                                }}
+                            >
+                                {proj.caption}
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            <div>
+                <h3
+                    style={{
+                        fontSize: `${titleFontSize}px`,
+                        fontWeight: titleFontWeight,
+                        color: titleColor,
+                        margin: 0,
+                        fontFamily: titleFontFamily,
+                        lineHeight: "1.3",
+                        wordBreak: "break-word",
+                    }}
+                >
+                    {proj.title}
+                </h3>
+            </div>
+
+            {proj.tags && (
+                <p
+                    style={{
+                        fontFamily: tagFontFamily,
+                        fontSize: `${tagFontSize}px`,
+                        fontWeight: tagFontWeight,
+                        color: tagColor,
+                        margin: 0,
+                        lineHeight: "1.2",
+                        wordBreak: "break-word",
+                    }}
+                >
+                    {proj.tags}
+                </p>
+            )}
+        </div>
+    )
+}
+
+PortfolioDeckMobile.defaultProps = {
+    cardWidth: 240,
+    cardHeight: 320,
+    cardBg: "#FFFFFF",
+    borderRadius: 22,
+    cardPadding: 16,
+    elementSpacing: 12,
+    cardGap: 16,
+    titleFontFamily: "sans-serif",
+    titleFontSize: 16,
+    titleFontWeight: "500",
+    titleColor: "#111111",
+    tagFontFamily: "sans-serif",
+    tagFontSize: 12,
+    tagFontWeight: "400",
+    tagColor: "#444444",
+    captionFontFamily: "Georgia, serif",
+    captionFontSize: 13,
+    captionFontWeight: "normal",
+    captionTextColor: "transparent",
+    textBoxBg: "rgba(255, 255, 255, 0.75)",
+    textBoxOpacity: 1.0,
+    project1Title: "User Experience of a handheld stapler",
+    project1Caption:
+        "A complete structural overhaul exploring physical geometry, task flows, and component breakdown modeling.",
+    project1Link: "",
+    project1Tags: "UX Design / UX Research",
+
+    project2Title: "Project Beta Title Breakdown",
+    project2Caption:
+        "An AI-driven layout solution built to introduce modern visual guidelines and asset systems natively.",
+    project2Link: "",
+    project2Tags: "UI Design / Prototyping",
+
+    project3Title: "Project Gamma Systems",
+    project3Caption:
+        "Playful skeuomorphic micro-interactions focused on bringing tactile physical details back onto the canvas interface.",
+    project3Link: "",
+    project3Tags: "Interaction / Mobile",
+
+    project4Title: "Project Delta Visual Guidelines",
+    project4Caption:
+        "Exploring graphic logo forms and brand layouts heavily inspired by classic animation storybook design.",
+    project4Link: "",
+    project4Tags: "Branding / Graphic Layout",
+}
+
+addPropertyControls(PortfolioDeckMobile, {
+    cardWidth: {
+        type: ControlType.Number,
+        title: "Card Width",
+        min: 150,
+        max: 400,
+        group: "Dimensions",
+    },
+    cardHeight: {
+        type: ControlType.Number,
+        title: "Card Height",
+        min: 200,
+        max: 600,
+        group: "Dimensions",
+    },
+    cardBg: {
+        type: ControlType.Color,
+        title: "Card Fill",
+        group: "Dimensions",
+    },
+    borderRadius: {
+        type: ControlType.Number,
+        title: "Corner Radius",
+        min: 0,
+        max: 40,
+        group: "Dimensions",
+    },
+    cardPadding: {
+        type: ControlType.Number,
+        title: "Card Padding",
+        min: 0,
+        max: 60,
+        group: "Dimensions",
+    },
+    elementSpacing: {
+        type: ControlType.Number,
+        title: "Content Spacing",
+        min: 0,
+        max: 40,
+        group: "Dimensions",
+    },
+    cardGap: {
+        type: ControlType.Number,
+        title: "Gap Between Cards",
+        min: 0,
+        max: 60,
+        group: "Dimensions",
+    },
+
+    titleFontFamily: {
+        type: ControlType.String,
+        title: "Font Family",
+        group: "Title Properties",
+    },
+    titleFontSize: {
+        type: ControlType.Number,
+        title: "Font Size",
+        min: 12,
+        max: 40,
+        group: "Title Properties",
+    },
+    titleFontWeight: {
+        type: ControlType.String,
+        title: "Weight",
+        group: "Title Properties",
+    },
+    titleColor: {
+        type: ControlType.Color,
+        title: "Color",
+        group: "Title Properties",
+    },
+
+    tagFontFamily: {
+        type: ControlType.String,
+        title: "Font Family",
+        group: "Tag Properties",
+    },
+    tagFontSize: {
+        type: ControlType.Number,
+        title: "Font Size",
+        min: 9,
+        max: 24,
+        group: "Tag Properties",
+    },
+    tagFontWeight: {
+        type: ControlType.String,
+        title: "Weight",
+        group: "Tag Properties",
+    },
+    tagColor: {
+        type: ControlType.Color,
+        title: "Color",
+        group: "Tag Properties",
+    },
+
+    captionFontFamily: {
+        type: ControlType.String,
+        title: "Font Family",
+        group: "Caption Properties",
+    },
+    captionFontSize: {
+        type: ControlType.Number,
+        title: "Font Size",
+        min: 10,
+        max: 24,
+        group: "Caption Properties",
+    },
+    captionFontWeight: {
+        type: ControlType.String,
+        title: "Weight",
+        group: "Caption Properties",
+    },
+    captionTextColor: {
+        type: ControlType.Color,
+        title: "Text Color",
+        group: "Caption Properties",
+    },
+    textBoxBg: {
+        type: ControlType.Color,
+        title: "Box Fill Color",
+        group: "Caption Properties",
+    },
+    textBoxOpacity: {
+        type: ControlType.Number,
+        title: "Box Opacity",
+        min: 0.0,
+        max: 1.0,
+        step: 0.05,
+        display: "slider",
+        group: "Caption Properties",
+    },
+
+    project1Title: {
+        type: ControlType.String,
+        title: "Title",
+        group: "Project 1",
+    },
+    project1Caption: {
+        type: ControlType.String,
+        display: "textarea",
+        title: "Description",
+        group: "Project 1",
+    },
+    project1Image: {
+        type: ControlType.Image,
+        title: "Mockup Image",
+        group: "Project 1",
+    },
+    project1Link: {
+        type: ControlType.String,
+        title: "URL Path",
+        group: "Project 1",
+    },
+    project1Tags: {
+        type: ControlType.String,
+        title: "Tags List",
+        group: "Project 1",
+    },
+
+    project2Title: {
+        type: ControlType.String,
+        title: "Title",
+        group: "Project 2",
+    },
+    project2Caption: {
+        type: ControlType.String,
+        display: "textarea",
+        title: "Description",
+        group: "Project 2",
+    },
+    project2Image: {
+        type: ControlType.Image,
+        title: "Mockup Image",
+        group: "Project 2",
+    },
+    project2Link: {
+        type: ControlType.String,
+        title: "URL Path",
+        group: "Project 2",
+    },
+    project2Tags: {
+        type: ControlType.String,
+        title: "Tags List",
+        group: "Project 2",
+    },
+
+    project3Title: {
+        type: ControlType.String,
+        title: "Title",
+        group: "Project 3",
+    },
+    project3Caption: {
+        type: ControlType.String,
+        display: "textarea",
+        title: "Description",
+        group: "Project 3",
+    },
+    project3Image: {
+        type: ControlType.Image,
+        title: "Mockup Image",
+        group: "Project 3",
+    },
+    project3Link: {
+        type: ControlType.String,
+        title: "URL Path",
+        group: "Project 3",
+    },
+    project3Tags: {
+        type: ControlType.String,
+        title: "Tags List",
+        group: "Project 3",
+    },
+
+    project4Title: {
+        type: ControlType.String,
+        title: "Title",
+        group: "Project 4",
+    },
+    project4Caption: {
+        type: ControlType.String,
+        display: "textarea",
+        title: "Description",
+        group: "Project 4",
+    },
+    project4Image: {
+        type: ControlType.Image,
+        title: "Mockup Image",
+        group: "Project 4",
+    },
+    project4Link: {
+        type: ControlType.String,
+        title: "URL Path",
+        group: "Project 4",
+    },
+    project4Tags: {
+        type: ControlType.String,
+        title: "Tags List",
+        group: "Project 4",
+    },
+})
